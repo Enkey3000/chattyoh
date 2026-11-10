@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="660" viewBox="0 0 1200 660" role="img" aria-labelledby="title desc">
+  <title id="title">ChattyOh planned system architecture</title>
+  <desc id="desc">Shared web, desktop, and mobile clients connect to a NestJS API, which coordinates domain modules, an LLM gateway, workers, PostgreSQL, Redis, object storage, and observability.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#466486"/></marker>
+    <style>
+      text{font-family:Segoe UI,Arial,sans-serif;fill:#17324f}.title{font-size:28px;font-weight:700}.label{font-size:17px;font-weight:700}.sub{font-size:14px}.box{fill:#fff;stroke:#77a2d4;stroke-width:2;rx:12}.core{fill:#eaf4ff;stroke:#2876c8}.store{fill:#eef8f3;stroke:#39926b}.line{stroke:#466486;stroke-width:2;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1200" height="660" fill="#f5f9fe"/>
+  <text x="54" y="58" class="title">ChattyOh — proposed architecture</text>
+  <text x="54" y="86" class="sub">Draft target state; backend components are planned, not present in the prototype.</text>
+  <rect x="60" y="145" width="220" height="130" class="box"/>
+  <text x="170" y="181" text-anchor="middle" class="label">Shared clients</text>
+  <text x="170" y="213" text-anchor="middle" class="sub">Web PWA</text><text x="170" y="237" text-anchor="middle" class="sub">Electron / Flutter shells</text>
+  <rect x="365" y="145" width="240" height="130" class="core"/>
+  <text x="485" y="181" text-anchor="middle" class="label">NestJS API</text>
+  <text x="485" y="213" text-anchor="middle" class="sub">Auth · REST · domain rules</text><text x="485" y="237" text-anchor="middle" class="sub">SSE · tenant context · audit</text>
+  <rect x="690" y="118" width="250" height="175" class="box"/>
+  <text x="815" y="153" text-anchor="middle" class="label">Domain modules</text>
+  <text x="815" y="184" text-anchor="middle" class="sub">Workspace · projects · tasks</text><text x="815" y="208" text-anchor="middle" class="sub">Chat · documents · agents</text><text x="815" y="232" text-anchor="middle" class="sub">Rules · approvals · audit</text><text x="815" y="263" text-anchor="middle" class="sub">LLM gateway</text>
+  <rect x="990" y="145" width="165" height="130" class="box"/>
+  <text x="1072" y="181" text-anchor="middle" class="label">Providers</text>
+  <text x="1072" y="213" text-anchor="middle" class="sub">OIDC · LLM</text><text x="1072" y="237" text-anchor="middle" class="sub">S3-compatible</text>
+  <path d="M280 210 H358" class="line"/><path d="M605 210 H683" class="line"/><path d="M940 210 H983" class="line"/>
+  <rect x="365" y="370" width="240" height="115" class="store"/>
+  <text x="485" y="406" text-anchor="middle" class="label">PostgreSQL + RLS</text><text x="485" y="437" text-anchor="middle" class="sub">Tenant-scoped source of truth</text>
+  <rect x="690" y="370" width="250" height="115" class="store"/>
+  <text x="815" y="406" text-anchor="middle" class="label">Redis + BullMQ</text><text x="815" y="437" text-anchor="middle" class="sub">Idempotent background jobs</text>
+  <rect x="990" y="370" width="165" height="115" class="store"/>
+  <text x="1072" y="406" text-anchor="middle" class="label">Object storage</text><text x="1072" y="437" text-anchor="middle" class="sub">Uploads · exports</text>
+  <path d="M485 275 V362" class="line"/><path d="M815 293 V362" class="line"/><path d="M1072 275 V362" class="line"/>
+  <rect x="365" y="535" width="575" height="76" class="box"/>
+  <text x="652" y="568" text-anchor="middle" class="label">OpenTelemetry observability</text><text x="652" y="592" text-anchor="middle" class="sub">Redacted logs · traces · metrics</text>
+  <path d="M485 485 V527" class="line"/><path d="M815 485 V527" class="line"/>
+</svg>

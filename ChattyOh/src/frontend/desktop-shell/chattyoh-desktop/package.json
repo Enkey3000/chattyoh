@@ -1,0 +1,26 @@
+{
+  "name": "chattyoh-desktop",
+  "productName": "ChattyOh",
+  "version": "0.1.0",
+  "description": "ChattyOh Inc — agentic AI workspace (desktop)",
+  "main": "main.js",
+  "author": "ChattyOh Inc",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.chattyoh.desktop",
+    "productName": "ChattyOh",
+    "files": ["main.js", "preload.js", "renderer/**", "build/icon.png"],
+    "directories": { "output": "dist" },
+    "mac": { "category": "public.app-category.developer-tools", "target": ["dmg"] },
+    "win": { "target": ["nsis"] },
+    "linux": { "target": ["AppImage"], "category": "Development" }
+  }
+}

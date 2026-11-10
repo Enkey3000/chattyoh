@@ -1,0 +1,22 @@
+site_name: ChattyOh
+site_description: Product, architecture, and delivery documentation for ChattyOh
+repo_name: ChattyOh
+docs_dir: docs
+strict: true
+
+theme:
+  name: mkdocs
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Overview: index.md
+  - Architecture: architecture.md
+  - API design: api-design.md
+  - Data model: data-model.md
+  - Product spec: product-spec.md
+  - Lessons learned: lessons-learned.md

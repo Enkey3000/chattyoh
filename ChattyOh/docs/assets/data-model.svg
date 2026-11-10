@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img" aria-labelledby="title desc">
+  <title id="title">ChattyOh proposed tenant-scoped data model</title>
+  <desc id="desc">Workspaces own projects, conversations, documents, agents, and audit events; membership connects users. Projects contain tasks, conversations contain messages, documents have versions, and agents create executions with approvals.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#466486"/></marker>
+    <style>text{font-family:Segoe UI,Arial,sans-serif;fill:#17324f}.title{font-size:27px;font-weight:700}.label{font-size:16px;font-weight:700}.sub{font-size:13px}.box{fill:#fff;stroke:#77a2d4;stroke-width:2;rx:10}.tenant{fill:#eaf4ff;stroke:#2876c8}.line{stroke:#466486;stroke-width:2;fill:none;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1200" height="650" fill="#f5f9fe"/>
+  <text x="50" y="53" class="title">ChattyOh — proposed logical data model</text>
+  <text x="50" y="78" class="sub">Every tenant-owned record carries tenant_id; all relations use immutable IDs.</text>
+  <rect x="490" y="105" width="220" height="72" class="tenant"/><text x="600" y="136" text-anchor="middle" class="label">Workspace / Tenant</text><text x="600" y="158" text-anchor="middle" class="sub">tenant boundary · RLS context</text>
+  <rect x="100" y="235" width="190" height="72" class="box"/><text x="195" y="266" text-anchor="middle" class="label">User</text><text x="195" y="288" text-anchor="middle" class="sub">identity provider subject</text>
+  <rect x="355" y="235" width="190" height="72" class="box"/><text x="450" y="266" text-anchor="middle" class="label">Membership</text><text x="450" y="288" text-anchor="middle" class="sub">role · status</text>
+  <rect x="660" y="235" width="190" height="72" class="box"/><text x="755" y="266" text-anchor="middle" class="label">Project</text><text x="755" y="288" text-anchor="middle" class="sub">stage · archive state</text>
+  <rect x="915" y="235" width="190" height="72" class="box"/><text x="1010" y="266" text-anchor="middle" class="label">Task</text><text x="1010" y="288" text-anchor="middle" class="sub">status · priority</text>
+  <path d="M490 160 L450 228" class="line"/><path d="M290 271 H347" class="line"/><path d="M710 160 L755 228" class="line"/><path d="M850 271 H907" class="line"/>
+  <rect x="100" y="405" width="190" height="72" class="box"/><text x="195" y="436" text-anchor="middle" class="label">Conversation</text><text x="195" y="458" text-anchor="middle" class="sub">tenant · owner</text>
+  <rect x="355" y="405" width="190" height="72" class="box"/><text x="450" y="436" text-anchor="middle" class="label">Message</text><text x="450" y="458" text-anchor="middle" class="sub">reply ID · state</text>
+  <rect x="660" y="405" width="190" height="72" class="box"/><text x="755" y="436" text-anchor="middle" class="label">Document</text><text x="755" y="458" text-anchor="middle" class="sub">type · lifecycle state</text>
+  <rect x="915" y="405" width="190" height="72" class="box"/><text x="1010" y="436" text-anchor="middle" class="label">Document version</text><text x="1010" y="458" text-anchor="middle" class="sub">immutable versioned body</text>
+  <path d="M535 160 L195 398" class="line"/><path d="M290 441 H347" class="line"/><path d="M710 160 L755 398" class="line"/><path d="M850 441 H907" class="line"/>
+  <rect x="355" y="540" width="190" height="72" class="box"/><text x="450" y="571" text-anchor="middle" class="label">Agent</text><text x="450" y="593" text-anchor="middle" class="sub">versioned config</text>
+  <rect x="660" y="540" width="190" height="72" class="box"/><text x="755" y="571" text-anchor="middle" class="label">Execution</text><text x="755" y="593" text-anchor="middle" class="sub">limits · usage · state</text>
+  <rect x="915" y="540" width="190" height="72" class="box"/><text x="1010" y="571" text-anchor="middle" class="label">Approval + audit</text><text x="1010" y="593" text-anchor="middle" class="sub">actor · decision · time</text>
+  <path d="M570 177 L450 533" class="line"/><path d="M545 576 H652" class="line"/><path d="M850 576 H907" class="line"/>
+</svg>

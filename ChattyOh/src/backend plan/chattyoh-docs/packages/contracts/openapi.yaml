@@ -1,0 +1,3124 @@
+openapi: 3.1.0
+info:
+  title: ChattyOh API
+  version: 0.1.0
+  description: Contract for the ChattyOh platform. Every operation lists the requirements it implements (x-srs) and the security
+    controls it relies on (x-sec). Tenant and user come from the session, never from the request body. Gated fields (project
+    stage/status, document status, agent status) are read-only and change only through action endpoints.
+servers:
+- url: https://api.example.com
+  description: Replace with the real API host
+security:
+- bearerAuth: []
+- cookieAuth: []
+tags:
+- name: Identity
+- name: Workspaces
+- name: Projects
+- name: Tasks
+- name: Chat
+- name: Documents
+- name: Agents
+- name: Approvals
+- name: Audit
+- name: Import/Export
+paths:
+  /v1/me:
+    get:
+      operationId: getMe
+      summary: Current user and memberships
+      tags:
+      - Identity
+      x-srs:
+      - SRS-FR-AUTH-001
+      x-sec:
+      - SEC-C-01
+      x-min-role: any
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/sessions:
+    get:
+      operationId: listSessions
+      summary: List active sessions
+      tags:
+      - Identity
+      x-srs:
+      - SRS-FR-AUTH-003
+      x-sec:
+      - SEC-C-01
+      x-min-role: any
+      parameters:
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/sessions/{sessionId}:
+    delete:
+      operationId: revokeSession
+      summary: Revoke a session
+      tags:
+      - Identity
+      x-srs:
+      - SRS-FR-AUTH-003
+      x-sec:
+      - SEC-C-01
+      - SEC-C-12
+      x-min-role: any
+      parameters:
+      - $ref: '#/components/parameters/sessionId'
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/mfa/enrollments:
+    post:
+      operationId: enrollMfa
+      summary: Start MFA enrollment (requires recent authentication)
+      tags:
+      - Identity
+      x-srs:
+      - SRS-FR-AUTH-002
+      x-sec:
+      - SEC-C-01
+      x-min-role: any
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaEnrollment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces:
+    get:
+      operationId: listWorkspaces
+      summary: List workspaces
+      tags:
+      - Workspaces
+      x-srs:
+      - SRS-FR-WS-001
+      x-sec:
+      - SEC-C-03
+      x-min-role: any
+      parameters:
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Workspace'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createWorkspace
+      summary: Create a workspace
+      tags:
+      - Workspaces
+      x-srs:
+      - SRS-FR-WS-001
+      x-sec:
+      - SEC-C-03
+      x-min-role: any
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceCreate'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}:
+    patch:
+      operationId: renameWorkspace
+      summary: Rename a workspace
+      tags:
+      - Workspaces
+      x-srs:
+      - SRS-FR-WS-001
+      x-sec:
+      - SEC-C-02
+      x-min-role: owner
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceRename'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/members:
+    get:
+      operationId: listMembers
+      summary: List members
+      tags:
+      - Workspaces
+      x-srs:
+      - SRS-FR-WS-002
+      x-sec:
+      - SEC-C-02
+      x-min-role: viewer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Member'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: inviteMember
+      summary: Invite a member (audited)
+      tags:
+      - Workspaces
+      x-srs:
+      - SRS-FR-WS-002
+      x-sec:
+      - SEC-C-02
+      - SEC-C-12
+      x-min-role: admin
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberInvite'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/members/{memberId}:
+    patch:
+      operationId: changeMemberRole
+      summary: Change a member role (audited, step-up)
+      tags:
+      - Workspaces
+      x-srs:
+      - SRS-FR-WS-002
+      - SRS-FR-AUTH-002
+      x-sec:
+      - SEC-C-02
+      - SEC-C-12
+      x-min-role: admin
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/memberId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberRole'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/projects:
+    get:
+      operationId: listProjects
+      summary: List projects
+      tags:
+      - Projects
+      x-srs:
+      - SRS-FR-WS-003
+      x-sec:
+      - SEC-C-02
+      - SEC-C-03
+      x-min-role: viewer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createProject
+      summary: Create a project
+      tags:
+      - Projects
+      x-srs:
+      - SRS-FR-WS-003
+      x-sec:
+      - SEC-C-02
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreate'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/projects/{projectId}:
+    get:
+      operationId: getProject
+      summary: Get a project
+      tags:
+      - Projects
+      x-srs:
+      - SRS-FR-WS-003
+      x-sec:
+      - SEC-C-02
+      x-min-role: viewer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/projectId'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updateProject
+      summary: Update editable project fields (never stage or status)
+      tags:
+      - Projects
+      x-srs:
+      - SRS-FR-WS-003
+      - SRS-NFR-INT-01
+      x-sec:
+      - SEC-C-02
+      - SEC-C-06
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/projectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectUpdate'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    delete:
+      operationId: archiveProject
+      summary: Archive a project (soft delete)
+      tags:
+      - Projects
+      x-srs:
+      - SRS-FR-WS-005
+      x-sec:
+      - SEC-C-12
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/projectId'
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/projects/{projectId}/restore:
+    post:
+      operationId: restoreProject
+      summary: Restore an archived project
+      tags:
+      - Projects
+      x-srs:
+      - SRS-FR-WS-005
+      x-sec:
+      - SEC-C-12
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/projectId'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/projects/{projectId}/actions/advance:
+    post:
+      operationId: advanceProject
+      summary: Advance the lifecycle stage; refused by gates
+      tags:
+      - Projects
+      x-srs:
+      - SRS-FR-WS-004
+      - SRS-NFR-INT-01
+      x-sec:
+      - SEC-C-02
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/projectId'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '409':
+          description: Refused by a gate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GateError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/tasks:
+    get:
+      operationId: listTasks
+      summary: List and search tasks
+      tags:
+      - Tasks
+      x-srs:
+      - SRS-FR-TASK-002
+      x-sec:
+      - SEC-C-06
+      x-min-role: viewer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      - name: q
+        in: query
+        schema:
+          type: string
+          maxLength: 200
+      - name: status
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createTask
+      summary: Create a task
+      tags:
+      - Tasks
+      x-srs:
+      - SRS-FR-TASK-001
+      x-sec:
+      - SEC-C-02
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/tasks/{taskId}:
+    patch:
+      operationId: updateTask
+      summary: Update a task
+      tags:
+      - Tasks
+      x-srs:
+      - SRS-FR-TASK-001
+      - SRS-FR-TASK-002
+      x-sec:
+      - SEC-C-06
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/taskId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    delete:
+      operationId: deleteTask
+      summary: Delete a task
+      tags:
+      - Tasks
+      x-srs:
+      - SRS-FR-TASK-001
+      x-sec:
+      - SEC-C-02
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/taskId'
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/conversations:
+    get:
+      operationId: listConversations
+      summary: List conversations
+      tags:
+      - Chat
+      x-srs:
+      - SRS-FR-CHAT-001
+      x-sec:
+      - SEC-C-02
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Conversation'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createConversation
+      summary: Create a conversation
+      tags:
+      - Chat
+      x-srs:
+      - SRS-FR-CHAT-001
+      x-sec:
+      - SEC-C-02
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationCreate'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/conversations/{conversationId}:
+    patch:
+      operationId: renameConversation
+      summary: Rename a conversation
+      tags:
+      - Chat
+      x-srs:
+      - SRS-FR-CHAT-001
+      x-sec:
+      - SEC-C-02
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/conversationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationRename'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    delete:
+      operationId: deleteConversation
+      summary: Delete a conversation
+      tags:
+      - Chat
+      x-srs:
+      - SRS-FR-CHAT-001
+      x-sec:
+      - SEC-C-12
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/conversationId'
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/conversations/{conversationId}/export:
+    get:
+      operationId: exportConversation
+      summary: Export a conversation as text
+      tags:
+      - Chat
+      x-srs:
+      - SRS-FR-CHAT-001
+      x-sec:
+      - SEC-C-04
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/conversationId'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/conversations/{conversationId}/messages:
+    post:
+      operationId: sendMessage
+      summary: Send a message and stream the reply (SSE); refused while a reply is pending
+      tags:
+      - Chat
+      x-srs:
+      - SRS-FR-CHAT-002
+      - SRS-FR-CHAT-003
+      x-sec:
+      - SEC-C-08
+      - SEC-C-09
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/conversationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageCreate'
+      responses:
+        '200':
+          description: Server-Sent Events stream of reply chunks tagged with the reply message ID; final event carries the
+            completed Message
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '409':
+          description: A reply is already pending in this conversation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/conversations/{conversationId}/messages/{messageId}/cancel:
+    post:
+      operationId: cancelMessage
+      summary: Stop a running reply and cancel the upstream request
+      tags:
+      - Chat
+      x-srs:
+      - SRS-FR-CHAT-005
+      x-sec:
+      - SEC-C-08
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/conversationId'
+      - $ref: '#/components/parameters/messageId'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/commands:
+    post:
+      operationId: runCommand
+      summary: Run a slash command through domain actions
+      tags:
+      - Chat
+      x-srs:
+      - SRS-FR-CHAT-004
+      x-sec:
+      - SEC-C-02
+      - SEC-C-06
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/documents:
+    get:
+      operationId: listDocuments
+      summary: List documents
+      tags:
+      - Documents
+      x-srs:
+      - SRS-FR-DOC-001
+      x-sec:
+      - SEC-C-02
+      x-min-role: viewer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Document'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createDocument
+      summary: Create a document
+      tags:
+      - Documents
+      x-srs:
+      - SRS-FR-DOC-001
+      x-sec:
+      - SEC-C-02
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentCreate'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/documents/{documentId}:
+    get:
+      operationId: getDocument
+      summary: Get a document
+      tags:
+      - Documents
+      x-srs:
+      - SRS-FR-DOC-001
+      x-sec:
+      - SEC-C-02
+      x-min-role: viewer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/documentId'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updateDocument
+      summary: Update a document (creates a version)
+      tags:
+      - Documents
+      x-srs:
+      - SRS-FR-DOC-001
+      - SRS-FR-DOC-004
+      x-sec:
+      - SEC-C-12
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/documentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentUpdate'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/documents/{documentId}/generate:
+    post:
+      operationId: generateDocument
+      summary: Generate an AI draft (labeled as draft)
+      tags:
+      - Documents
+      x-srs:
+      - SRS-FR-DOC-002
+      x-sec:
+      - SEC-C-09
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/documentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentGenerate'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/documents/{documentId}/transitions:
+    post:
+      operationId: transitionDocument
+      summary: Move through Draft, In review, Approved (approval needs Admin; audited)
+      tags:
+      - Documents
+      x-srs:
+      - SRS-FR-DOC-003
+      x-sec:
+      - SEC-C-02
+      - SEC-C-12
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/documentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentTransition'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/documents/{documentId}/versions:
+    get:
+      operationId: listDocumentVersions
+      summary: List versions
+      tags:
+      - Documents
+      x-srs:
+      - SRS-FR-DOC-004
+      x-sec:
+      - SEC-C-12
+      x-min-role: viewer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/documentId'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DocumentVersion'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/documents/{documentId}/versions/{version}/restore:
+    post:
+      operationId: restoreDocumentVersion
+      summary: Restore a version
+      tags:
+      - Documents
+      x-srs:
+      - SRS-FR-DOC-004
+      x-sec:
+      - SEC-C-12
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/documentId'
+      - $ref: '#/components/parameters/version'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/agents:
+    get:
+      operationId: listAgents
+      summary: List agents
+      tags:
+      - Agents
+      x-srs:
+      - SRS-FR-AGENT-001
+      x-sec:
+      - SEC-C-02
+      x-min-role: viewer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Agent'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createAgent
+      summary: Create an agent (tool allow-list validated)
+      tags:
+      - Agents
+      x-srs:
+      - SRS-FR-AGENT-001
+      x-sec:
+      - SEC-C-06
+      - SEC-C-10
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCreate'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/agents/{agentId}:
+    patch:
+      operationId: updateAgent
+      summary: Update an agent
+      tags:
+      - Agents
+      x-srs:
+      - SRS-FR-AGENT-001
+      x-sec:
+      - SEC-C-10
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/agentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentUpdate'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/agents/{agentId}/test:
+    post:
+      operationId: testAgent
+      summary: Test an agent and record the result
+      tags:
+      - Agents
+      x-srs:
+      - SRS-FR-AGENT-002
+      x-sec:
+      - SEC-C-09
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/agentId'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentTestResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/agents/{agentId}/deploy:
+    post:
+      operationId: requestAgentDeployment
+      summary: Request deployment; needs a passed test and approval when policy requires
+      tags:
+      - Agents
+      x-srs:
+      - SRS-FR-AGENT-003
+      x-sec:
+      - SEC-C-09
+      - SEC-C-12
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/agentId'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/agents/{agentId}/pause:
+    post:
+      operationId: pauseAgent
+      summary: Pause a deployed agent
+      tags:
+      - Agents
+      x-srs:
+      - SRS-FR-AGENT-006
+      x-sec:
+      - SEC-C-02
+      x-min-role: admin
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/agentId'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/agents/{agentId}/resume:
+    post:
+      operationId: resumeAgent
+      summary: Resume a paused agent
+      tags:
+      - Agents
+      x-srs:
+      - SRS-FR-AGENT-006
+      x-sec:
+      - SEC-C-02
+      x-min-role: admin
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/agentId'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/agents/{agentId}/runs:
+    post:
+      operationId: runAgent
+      summary: Run an agent within step, time and cost limits
+      tags:
+      - Agents
+      x-srs:
+      - SRS-FR-AGENT-004
+      x-sec:
+      - SEC-C-08
+      - SEC-C-09
+      - SEC-C-10
+      x-min-role: developer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/agentId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunRequest'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Execution'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/executions:
+    get:
+      operationId: listExecutions
+      summary: Execution history
+      tags:
+      - Agents
+      x-srs:
+      - SRS-FR-AGENT-005
+      x-sec:
+      - SEC-C-12
+      x-min-role: viewer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Execution'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/approvals:
+    get:
+      operationId: listApprovals
+      summary: List approvals
+      tags:
+      - Approvals
+      x-srs:
+      - SRS-FR-AGENT-003
+      - SRS-FR-DOC-003
+      x-sec:
+      - SEC-C-02
+      x-min-role: admin
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Approval'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/approvals/{approvalId}/decision:
+    post:
+      operationId: decideApproval
+      summary: Approve or reject (shows exact action; step-up)
+      tags:
+      - Approvals
+      x-srs:
+      - SRS-FR-AGENT-003
+      - SRS-FR-AGENT-004
+      - SRS-FR-AUTH-002
+      x-sec:
+      - SEC-C-09
+      - SEC-C-12
+      x-min-role: admin
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/approvalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalDecision'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/audit-events:
+    get:
+      operationId: listAuditEvents
+      summary: Read the audit log (append-only)
+      tags:
+      - Audit
+      x-srs:
+      - SRS-FR-AUDIT-001
+      x-sec:
+      - SEC-C-12
+      x-min-role: admin
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditEvent'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/notifications:
+    get:
+      operationId: listNotifications
+      summary: List notifications
+      tags:
+      - Audit
+      x-srs:
+      - SRS-FR-AUDIT-002
+      x-sec:
+      - SEC-C-12
+      x-min-role: viewer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/cursor'
+      - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/notifications/{notificationId}/read:
+    post:
+      operationId: markNotificationRead
+      summary: Mark a notification read
+      tags:
+      - Audit
+      x-srs:
+      - SRS-FR-AUDIT-002
+      x-sec:
+      - SEC-C-02
+      x-min-role: viewer
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/notificationId'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/exports:
+    post:
+      operationId: createExport
+      summary: Export workspace data (no secrets or tokens)
+      tags:
+      - Import/Export
+      x-srs:
+      - SRS-FR-IO-001
+      - SRS-NFR-PRIV-01
+      x-sec:
+      - SEC-C-04
+      - SEC-C-15
+      x-min-role: admin
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportBundle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/imports:
+    post:
+      operationId: createImport
+      summary: Validate and import data (dry run supported)
+      tags:
+      - Import/Export
+      x-srs:
+      - SRS-FR-IO-002
+      x-sec:
+      - SEC-C-06
+      x-min-role: admin
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportPreview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/backups:
+    post:
+      operationId: createBackup
+      summary: Create an encrypted backup
+      tags:
+      - Import/Export
+      x-srs:
+      - SRS-FR-IO-003
+      x-sec:
+      - SEC-C-13
+      x-min-role: admin
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Backup'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/workspaces/{workspaceId}/backups/{backupId}/restore:
+    post:
+      operationId: restoreBackup
+      summary: Restore a backup (snapshot taken first; step-up)
+      tags:
+      - Import/Export
+      x-srs:
+      - SRS-FR-IO-003
+      - SRS-FR-AUTH-002
+      x-sec:
+      - SEC-C-13
+      x-min-role: owner
+      parameters:
+      - $ref: '#/components/parameters/workspaceId'
+      - $ref: '#/components/parameters/backupId'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Backup'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+  parameters:
+    workspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    projectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    taskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    conversationId:
+      name: conversationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    messageId:
+      name: messageId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    documentId:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    agentId:
+      name: agentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    approvalId:
+      name: approvalId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    notificationId:
+      name: notificationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    memberId:
+      name: memberId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    sessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    backupId:
+      name: backupId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    version:
+      name: version
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      schema:
+        type: string
+        maxLength: 128
+      description: Repeat of the same key returns the original result
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+        requestId:
+          type: string
+      additionalProperties: false
+      required:
+      - code
+      - message
+      - requestId
+    Me:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        displayName:
+          type: string
+        memberships:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membership'
+      additionalProperties: false
+      required:
+      - id
+      - email
+      - displayName
+      - memberships
+    Membership:
+      type: object
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/Role'
+      additionalProperties: false
+      required:
+      - workspaceId
+      - role
+    Role:
+      type: string
+      enum:
+      - owner
+      - admin
+      - developer
+      - viewer
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        device:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        current:
+          type: boolean
+      additionalProperties: false
+      required:
+      - id
+      - device
+      - createdAt
+      - current
+    MfaEnrollment:
+      type: object
+      properties:
+        method:
+          type: string
+          enum:
+          - totp
+        secretUri:
+          type: string
+      additionalProperties: false
+      required:
+      - method
+      - secretUri
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+          - personal
+          - team
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - kind
+      - createdAt
+    WorkspaceCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+          - personal
+          - team
+      additionalProperties: false
+      required:
+      - name
+      - kind
+    WorkspaceRename:
+      type: object
+      properties:
+        name:
+          type: string
+      additionalProperties: false
+      required:
+      - name
+    Member:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+        status:
+          type: string
+          enum:
+          - invited
+          - active
+      additionalProperties: false
+      required:
+      - id
+      - email
+      - role
+      - status
+    MemberInvite:
+      type: object
+      properties:
+        email:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+      additionalProperties: false
+      required:
+      - email
+      - role
+    MemberRole:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+      additionalProperties: false
+      required:
+      - role
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        tenantId:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        stage:
+          type: string
+          enum:
+          - chat
+          - vibe
+          - comp
+          - spec
+          - dev
+          - test
+          - rev
+          - push
+          - gent
+          readOnly: true
+        status:
+          type: string
+          enum:
+          - active
+          - in_development
+          - awaiting_testing
+          - awaiting_review
+          - deploy_ready
+          - published
+          - failed
+          - archived
+          readOnly: true
+        progress:
+          type: integer
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+      required:
+      - id
+      - tenantId
+      - name
+      - stage
+      - status
+      - progress
+      - createdAt
+      - updatedAt
+    ProjectCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        notes:
+          type: string
+      additionalProperties: false
+      required:
+      - name
+    ProjectUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        notes:
+          type: string
+        progress:
+          type: integer
+      additionalProperties: false
+    GateError:
+      type: object
+      properties:
+        code:
+          type: string
+          enum:
+          - gate_failing_tests
+          - gate_open_critical_finding
+          - gate_not_permitted
+        message:
+          type: string
+        blockedBy:
+          type: array
+          items:
+            type: string
+            format: uuid
+      additionalProperties: false
+      required:
+      - code
+      - message
+      - blockedBy
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        projectId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        status:
+          type: string
+          enum:
+          - todo
+          - in_progress
+          - done
+        priority:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+        dueDate:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+      required:
+      - id
+      - projectId
+      - title
+      - status
+      - priority
+      - createdAt
+    TaskCreate:
+      type: object
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        priority:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+        dueDate:
+          type: string
+      additionalProperties: false
+      required:
+      - projectId
+      - title
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        status:
+          type: string
+          enum:
+          - todo
+          - in_progress
+          - done
+        priority:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+        dueDate:
+          type: string
+      additionalProperties: false
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+      required:
+      - id
+      - title
+      - createdAt
+    ConversationCreate:
+      type: object
+      properties:
+        title:
+          type: string
+      additionalProperties: false
+    ConversationRename:
+      type: object
+      properties:
+        title:
+          type: string
+      additionalProperties: false
+      required:
+      - title
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        conversationId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum:
+          - user
+          - assistant
+        content:
+          type: string
+        state:
+          type: string
+          enum:
+          - pending
+          - complete
+          - cancelled
+          - failed
+          readOnly: true
+        model:
+          type: string
+        source:
+          type: string
+          enum:
+          - gateway
+          - fallback
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+      required:
+      - id
+      - conversationId
+      - role
+      - content
+      - state
+      - createdAt
+    MessageCreate:
+      type: object
+      properties:
+        content:
+          type: string
+        model:
+          type: string
+      additionalProperties: false
+      required:
+      - content
+    CommandRequest:
+      type: object
+      properties:
+        text:
+          type: string
+      additionalProperties: false
+      required:
+      - text
+    CommandResult:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        message:
+          type: string
+        createdIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      additionalProperties: false
+      required:
+      - ok
+      - message
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+        type:
+          type: string
+          enum:
+          - BRD
+          - PRD
+          - SRS
+          - Architecture
+          - APIDocs
+          - TestPlan
+          - Security
+          - Runbook
+        status:
+          type: string
+          enum:
+          - draft
+          - in_review
+          - approved
+          readOnly: true
+        body:
+          type: string
+        isAiDraft:
+          type: boolean
+        version:
+          type: integer
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+      required:
+      - id
+      - title
+      - type
+      - status
+      - body
+      - isAiDraft
+      - version
+      - createdAt
+      - updatedAt
+    DocumentCreate:
+      type: object
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+          enum:
+          - BRD
+          - PRD
+          - SRS
+          - Architecture
+          - APIDocs
+          - TestPlan
+          - Security
+          - Runbook
+        body:
+          type: string
+      additionalProperties: false
+      required:
+      - title
+      - type
+    DocumentUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+      additionalProperties: false
+    DocumentGenerate:
+      type: object
+      properties:
+        prompt:
+          type: string
+      additionalProperties: false
+    DocumentTransition:
+      type: object
+      properties:
+        to:
+          type: string
+          enum:
+          - in_review
+          - approved
+          - draft
+        comment:
+          type: string
+      additionalProperties: false
+      required:
+      - to
+    DocumentVersion:
+      type: object
+      properties:
+        version:
+          type: integer
+        body:
+          type: string
+        authorId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+      required:
+      - version
+      - body
+      - authorId
+      - createdAt
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+          - general
+          - coding
+          - research
+          - data
+          - support
+          - security
+          - testing
+          - deployment
+        model:
+          type: string
+        instructions:
+          type: string
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolGrant'
+        status:
+          type: string
+          enum:
+          - draft
+          - testing
+          - deployed
+          - paused
+          - failed
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - type
+      - model
+      - instructions
+      - tools
+      - status
+      - createdAt
+    ToolGrant:
+      type: object
+      properties:
+        tool:
+          type: string
+        scope:
+          type: string
+          enum:
+          - read
+          - write
+        sensitive:
+          type: boolean
+      additionalProperties: false
+      required:
+      - tool
+      - scope
+      - sensitive
+    AgentCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+          - general
+          - coding
+          - research
+          - data
+          - support
+          - security
+          - testing
+          - deployment
+        model:
+          type: string
+        instructions:
+          type: string
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolGrant'
+      additionalProperties: false
+      required:
+      - name
+      - type
+      - instructions
+    AgentUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        instructions:
+          type: string
+        model:
+          type: string
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolGrant'
+      additionalProperties: false
+    AgentTestResult:
+      type: object
+      properties:
+        passed:
+          type: boolean
+        checks:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+      required:
+      - passed
+      - checks
+    Approval:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        kind:
+          type: string
+          enum:
+          - agent_deploy
+          - tool_call
+          - document
+        subjectId:
+          type: string
+          format: uuid
+        summary:
+          type: string
+        arguments:
+          type: object
+        state:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+          readOnly: true
+        requestedBy:
+          type: string
+          format: uuid
+        decidedBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+      required:
+      - id
+      - kind
+      - subjectId
+      - summary
+      - state
+      - requestedBy
+      - createdAt
+    ApprovalDecision:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum:
+          - approve
+          - reject
+        reason:
+          type: string
+      additionalProperties: false
+      required:
+      - decision
+    RunRequest:
+      type: object
+      properties:
+        input:
+          type: string
+      additionalProperties: false
+      required:
+      - input
+    Execution:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        agentId:
+          type: string
+          format: uuid
+        agentVersion:
+          type: integer
+        input:
+          type: string
+        output:
+          type: string
+        toolCalls:
+          type: array
+          items:
+            type: object
+        costUsd:
+          type: number
+        durationMs:
+          type: integer
+        status:
+          type: string
+          enum:
+          - running
+          - waiting_approval
+          - success
+          - failed
+          - stopped
+        approverId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+      required:
+      - id
+      - agentId
+      - agentVersion
+      - input
+      - toolCalls
+      - costUsd
+      - durationMs
+      - status
+      - createdAt
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        actorId:
+          type: string
+          format: uuid
+        action:
+          type: string
+        targetId:
+          type: string
+          format: uuid
+        result:
+          type: string
+          enum:
+          - success
+          - denied
+          - error
+        requestId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+      required:
+      - id
+      - actorId
+      - action
+      - result
+      - requestId
+      - createdAt
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        message:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+      required:
+      - id
+      - message
+      - read
+      - createdAt
+    ExportBundle:
+      type: object
+      properties:
+        schemaVersion:
+          type: integer
+        exportedAt:
+          type: string
+          format: date-time
+        data:
+          type: object
+      additionalProperties: false
+      required:
+      - schemaVersion
+      - exportedAt
+      - data
+    ImportRequest:
+      type: object
+      properties:
+        bundle:
+          $ref: '#/components/schemas/ExportBundle'
+        dryRun:
+          type: boolean
+      additionalProperties: false
+      required:
+      - bundle
+    ImportPreview:
+      type: object
+      properties:
+        schemaVersion:
+          type: integer
+        counts:
+          type: object
+        conflicts:
+          type: array
+          items:
+            type: string
+        applied:
+          type: boolean
+      additionalProperties: false
+      required:
+      - schemaVersion
+      - counts
+      - conflicts
+      - applied
+    Backup:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        schemaVersion:
+          type: integer
+        sizeBytes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+      required:
+      - id
+      - schemaVersion
+      - sizeBytes
+      - createdAt
+  responses:
+    BadRequest:
+      description: Invalid input (schema, size or unknown field)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Not authenticated or session expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Not permitted (role, tenant or step-up required)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not found (also returned for other tenants' IDs)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit or quota exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
